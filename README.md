@@ -21,13 +21,10 @@ Implementation in Dart
 <img src="assets/images/app.png" />
 
 ---
-<h1 align='center'>
-🚀 About Me
-</h1>
 
-<h2 align='center'>
+<h1 align='center'>
   Hi there 👋 I'm Hemant 👨‍💻
-</h2>
+</h1>
 
 <p align='center'>
   A full-stack developer from Mauritius.
