@@ -22,8 +22,6 @@ Implementation in Dart
 
 ---
 
-##### 🚀 About Me
-
 <h1 align='center'>
   Hi there 👋 I'm Hemant 👨‍💻
 </h1>
