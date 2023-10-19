@@ -21,9 +21,15 @@ class _HomeState extends State<Home> {
   DatabaseHelper noteDatabase = DatabaseHelper.instance;
   List<NoteModel> notes = [];
 
+  TextEditingController searchController = TextEditingController();
+  bool isSearchTextNotEmpty = false;
+  List<NoteModel> filteredNotes = []; // Maintain a list for filtered notes
+
+
   @override
   void initState() {
     refreshNotes();
+    search();
     super.initState();
   }
 
@@ -32,6 +38,25 @@ class _HomeState extends State<Home> {
     // Close the database when no longer needed
     noteDatabase.close();
     super.dispose();
+  }
+
+  // Search methods
+  search(){
+    searchController.addListener(() {
+      setState(() {
+        isSearchTextNotEmpty = searchController.text.isNotEmpty;
+        if (isSearchTextNotEmpty) {
+          // Perform filtering and update the filteredNotes list
+          filteredNotes = notes.where((note) {
+            return note.title!.toLowerCase().contains(searchController.text.toLowerCase()) ||
+                note.description!.toLowerCase().contains(searchController.text.toLowerCase());
+          }).toList();
+        } else {
+          // Clear the filteredNotes list
+          filteredNotes.clear();
+        }
+      });
+    });
   }
 
   // Fetch and refresh the list of notes from the database
@@ -102,7 +127,7 @@ class _HomeState extends State<Home> {
     return Scaffold(
       backgroundColor: const Color.fromRGBO(247, 250, 252, 1.0),
       body: Column(
-        children: [
+        children: <Widget>[
           TopContainer(
             height: 200,
             width: width,
@@ -164,6 +189,34 @@ class _HomeState extends State<Home> {
                   )
                 ]),
           ),
+          // Search TextField with Conditional Clear Button
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: searchController,
+                    decoration: const InputDecoration(
+                      hintText: 'Search Notes...',
+                      prefixIcon: Icon(Icons.search),
+                    ),
+                  ),
+                ),
+                if (isSearchTextNotEmpty)
+                  IconButton(
+                    icon: const Icon(Icons.clear),
+                    onPressed: () {
+                      // Clear the search text and update the UI
+                      searchController.clear();
+                      // Reset the filteredNotes list and refresh the original notes
+                      filteredNotes.clear();
+                      refreshNotes();
+                    },
+                  ),
+              ],
+            ),
+          ),
           // Scrollable area for displaying notes
           Expanded(
             child: SingleChildScrollView(
@@ -181,41 +234,20 @@ class _HomeState extends State<Home> {
                               ),
                             ),
                           )
-                        : Column(
-                            children: notes.map((note) {
-                              return Card(
-                                  child: GestureDetector(
-                                onTap: () => {},
-                                child: ListTile(
-                                  leading: const Icon(
-                                    Icons.note,
-                                    color: Color.fromARGB(255, 253, 237, 89),
-                                  ),
-                                  title: Text(note.title ?? ""),
-                                  subtitle: Text(note.description ?? ""),
-                                  trailing: Wrap(
-                                    children: [
-                                      IconButton(
-                                        onPressed: () =>
-                                            goToNoteDetailsView(id: note.id),
-                                        icon:
-                                            const Icon(Icons.arrow_forward_ios),
-                                      ),
-                                      IconButton(
-                                        onPressed: () =>
-                                            deleteNote(id: note.id),
-                                        icon: const Icon(
-                                          Icons.delete,
-                                          color:
-                                              Color.fromARGB(255, 255, 81, 0),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ));
-                            }).toList(),
-                          ),
+                    : Column(
+                      children: [
+                        if (isSearchTextNotEmpty)
+                          ...filteredNotes.map((note) {
+                            // Display filtered notes
+                            return buildNoteCard(note);
+                          }).toList()
+                        else
+                          ...notes.map((note) {
+                            // Display original notes when not searching
+                            return buildNoteCard(note);
+                          }).toList(),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -228,6 +260,38 @@ class _HomeState extends State<Home> {
         onPressed: goToNoteDetailsView,
         tooltip: 'Create Note',
         child: const Icon(Icons.add),
+      ),
+    );
+  }
+
+  // Helper method to build a note card
+  Widget buildNoteCard(NoteModel note) {
+    return Card(
+      child: GestureDetector(
+        onTap: () => {},
+        child: ListTile(
+          leading: const Icon(
+            Icons.note,
+            color: Color.fromARGB(255, 253, 237, 89),
+          ),
+          title: Text(note.title ?? ""),
+          subtitle: Text(note.description ?? ""),
+          trailing: Wrap(
+            children: [
+              IconButton(
+                onPressed: () => goToNoteDetailsView(id: note.id),
+                icon: const Icon(Icons.arrow_forward_ios),
+              ),
+              IconButton(
+                onPressed: () => deleteNote(id: note.id),
+                icon: const Icon(
+                  Icons.delete,
+                  color: Color.fromARGB(255, 255, 81, 0),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
